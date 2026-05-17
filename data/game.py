@@ -14,7 +14,7 @@ import data.headers
 API_FIELDS = (
     "gameData,game,id,datetime,dateTime,officialDate,flags,noHitter,perfectGame,status,detailedState,abstractGameState,"
     + "reason,probablePitchers,teams,home,away,abbreviation,teamName,record,wins,losses,players,id,boxscoreName,fullName,liveData,plays,"
-    + "currentPlay,result,eventType,playEvents,isPitch,pitchData,startSpeed,details,type,code,description,decisions,"
+    + "currentPlay,result,eventType,allPlays,playEvents,pitchData,coordinates,strikeZoneTop,strikeZoneBottom,startSpeed,details,type,code,description,decisions,"
     + "winner,loser,save,id,linescore,outs,balls,strikes,note,inningState,currentInning,currentInningOrdinal,offense,"
     + "batter,inHole,onDeck,first,second,third,defense,pitcher,boxscore,teams,runs,players,seasonStats,pitching,wins,"
     + "losses,saves,era,hits,errors,stats,pitching,numberOfPitches,weather,condition,temp,wind,metaData,timeStamp"
@@ -57,6 +57,10 @@ class Game:
             try:
                 debug.log("Fetching data for game %s", str(self.game_id))
                 live_data = statsapi.get("game", {"gamePk": self.game_id, "fields": API_FIELDS} | testing_params, request_kwargs={"headers": data.headers.API_HEADERS} )
+
+                # Log a small sample of where pitchData appears so callers can inspect the structure
+
+
                 # we add a delay to avoid spoilers. During construction, this will still yield live data, but then
                 # it will recycle that data until the queue is full.
                 self._data_wait_queue.push(live_data)
@@ -294,6 +298,39 @@ class Game:
                 )
         except:
             return None
+
+    def pitch_data(self, limit: int = 12):
+        """Return a list of recent pitch events containing their pitchData.
+
+        Each item is a tuple (event_dict, pitchData_dict). The list is ordered
+        from most-recent to older. If no pitch events are available an empty
+        list is returned.
+        """
+        results = []
+        try:
+            plays = (self._current_data.get("liveData") or {}).get("plays") or {}
+            current_play = plays.get("currentPlay")
+            all_plays = plays.get("allPlays") or []
+
+            # Collect from currentPlay (most recent events first)
+            if current_play:
+                for ev in reversed(current_play.get("playEvents") or []):
+                    if ev.get("isPitch"):
+                        results.append((ev, ev.get("pitchData") or {}))
+                        if len(results) >= limit:
+                            return results
+
+            # Fallback: collect from recent allPlays in reverse chronological order
+            for play in reversed(all_plays):
+                for ev in reversed(play.get("playEvents") or []):
+                    if ev.get("isPitch"):
+                        results.append((ev, ev.get("pitchData") or {}))
+                        if len(results) >= limit:
+                            return results
+        except Exception:
+            debug.exception("Failed to extract pitchData sample for logging")
+
+        return results
 
     def current_pitcher_pitch_count(self):
         try:

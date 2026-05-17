@@ -99,6 +99,12 @@ class Config:
         self.check_preferred_teams()
         self.check_preferred_divisions()
 
+        # Pitch tracker feature toggle (optional)
+        try:
+            self.pitch_tracker_enabled = json.get("pitch_tracker", {}).get("enabled", True)
+        except Exception:
+            self.pitch_tracker_enabled = True
+
         # Check the rotation_rates to make sure it's valid and not silly
         self.check_rotate_rates()
         self.check_delay()

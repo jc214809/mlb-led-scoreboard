@@ -1,6 +1,6 @@
 {
 	"preferred": {
-		"teams": ["Cubs"],
+		"teams": ["Yankees"],
 		"divisions": ["NL Central", "NL Wild Card"]
 	},
 	"news_ticker": {
@@ -49,5 +49,8 @@
 	"pregame_weather": true,
 	"scrolling_speed": 2,
 	"debug": false,
-	"demo_date": false
+	"demo_date": false,
+	"pitch_tracker": {
+		"enabled": true
+	}
 }

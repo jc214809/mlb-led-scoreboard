@@ -8,11 +8,8 @@ from data.scoreboard import Scoreboard
 from data.scoreboard.postgame import Postgame
 from data.scoreboard.pregame import Pregame
 from renderers import network, offday, standings
-from renderers.games import game as gamerender
-from renderers.games import irregular
-from renderers.games import postgame as postgamerender
-from renderers.games import pregame as pregamerender
-from renderers.games import teams
+from data.games import teams, irregular, pitchzone, game as gamerender, postgame as postgamerender, \
+    pregame as pregamerender
 
 # TODO(BMW) make configurable time?
 STANDINGS_NEWS_SWITCH_TIME = 120
@@ -154,6 +151,15 @@ class MainRenderer:
                 self.canvas, layout, colors, scoreboard, self.scrolling_text_pos, self.animation_time
             )
             self.__update_scrolling_text_pos(pos, loop_point)
+
+            # If enabled in config, render the pitch zone overlay using the existing Game data pool
+            try:
+                if self.data.config.pitch_tracker_enabled and self.data.current_game is not None:
+                    debug.log("Calling pitchzone.render_pitch_zone (game_id=%s delay=%s pitch_tracker_enabled=%s)", getattr(self.data.current_game, 'game_id', None), self.data.current_game.current_delay(), self.data.config.pitch_tracker_enabled)
+                    pitchzone.render_pitch_zone(self.canvas, self.data.config.layout, self.data.config.scoreboard_colors, self.data.current_game)
+            except Exception:
+                # Don't let pitch overlay break main render loop; log exception for debugging
+                debug.exception("Exception while rendering pitch zone")
 
         # draw last so it is always on top
         teams.render_team_banner(

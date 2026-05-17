@@ -338,5 +338,12 @@
       "x": 61,
       "y": 63
     }
+  },
+  "pitchzone": {
+    "enabled": true,
+    "x": 40,
+    "y": 40,
+    "width": 24,
+    "height": 24
   }
 }
