@@ -16,11 +16,15 @@ GAMES_REFRESH_RATE = 15
 
 
 class Schedule:
-    def __init__(self, config: Config) -> None:
+    def __init__(
+        self, config: Config, plugin_renderers: Optional[dict] = None, plugin_data: Optional[dict] = None
+    ) -> None:
         self.config = config
         self.date = self.config.parse_today()
         self.starttime = time.time()
         self.current_idx = 0
+        self._plugin_renderers = plugin_renderers or {}
+        self._plugin_data = plugin_data or {}
 
         delay_required = ceil(self.config.sync_delay_seconds / GAMES_REFRESH_RATE)
 
@@ -95,7 +99,7 @@ class Schedule:
             scheduled_game = self._games[self.current_idx]
             if unless and scheduled_game["game_id"] == unless.game_id:
                 return unless
-            return Game.from_scheduled(scheduled_game, self.config)
+            return Game.from_scheduled(scheduled_game, self.config.sync_amount, self.config.api_refresh_rate)
         except IndexError:
             return None
 
@@ -110,6 +114,13 @@ class Schedule:
         for rule in self.config.rotation_time_rules:
             priority = rule.matches(datetime.datetime.now())
             if priority:
+                highest = max(highest, priority)
+
+        for plugin_name, priority in self.config.rotation_plugin_priority_rules.items():
+            renderer = self._plugin_renderers.get(plugin_name)
+            data = self._plugin_data.get(plugin_name)
+            if renderer is not None and data is not None and renderer.is_active(data):
+                LOGGER.debug("Plugin %s claims priority %d", plugin_name, priority)
                 highest = max(highest, priority)
 
         for game in all_games:

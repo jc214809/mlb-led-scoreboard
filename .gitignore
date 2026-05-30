@@ -134,3 +134,7 @@ team_colors.jpg
 # Editors
 .vscode/
 .claude/
+.idea/
+
+# Runtime data
+projectGameData.json

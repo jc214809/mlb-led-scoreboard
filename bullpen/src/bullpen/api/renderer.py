@@ -37,5 +37,9 @@ class PluginRenderer(abc.ABC, Generic[_PluginData]):
         """Called at the end of rendering, can be used to reset state before switching off"""
         pass
 
+    def is_active(self, data: _PluginData) -> bool:
+        """Return False to skip this plugin and fall back to lower-priority content."""
+        return True
+
     def can_render(self, data: _PluginData) -> bool:
         return True
